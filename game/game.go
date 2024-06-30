@@ -75,7 +75,7 @@ func NewGame() *Game {
 		newGame.boardSize = 9
 	}
 
-	newGame.GameState = UIPauseMenu
+	newGame.GameState = Gameplay
 	newGame.TouchInput.ShowTouchInput = true
 	newGame.board.NewBoard(screenWidth, screenHeight, newGame.boardSize, rendererScale)
 	//go randomStoneLooper(newGame.boardSize * newGame.boardSize)
@@ -99,7 +99,6 @@ func (g *Game) Update() error {
 	//println(g.GameState)
 	start := time.Now()
 	timeSampler++
-
 	if inpututil.IsKeyJustPressed(ebiten.KeyEscape) || inpututil.IsKeyJustPressed(ebiten.KeyTab) || inpututil.IsKeyJustPressed(ebiten.KeyM) {
 		timeNow := time.Now()
 		if timeNow.Sub(g.board.LastMove) > time.Millisecond*100 {
@@ -215,97 +214,18 @@ func (g *Game) Update() error {
 
 	if g.GameState == Gameplay {
 		if inpututil.IsKeyJustPressed(ebiten.KeyUp) || inpututil.IsKeyJustPressed(ebiten.KeyW) {
-			timeNow := time.Now()
-			if timeNow.Sub(g.board.LastMove) > time.Millisecond*120 {
-				g.board.LastMove = timeNow
-				for i := range g.board.Grid {
-					if g.board.Grid[i].IsStoneHover && i != 0 && g.board.Grid[i].Col != 0 {
-						g.board.Grid[i].IsStoneHover = false
-						g.board.Grid[i].HoverStone = nil
-						if i != 0 {
-							g.board.Grid[i-1].IsStoneHover = true
-						}
-						if g.board.Turn == "black" && i != 0 {
-							g.board.Grid[i-1].HoverStone = g.board.StoneB
-						} else if i != 0 {
-							g.board.Grid[i-1].HoverStone = g.board.StoneW
-						}
-					}
-				}
-			}
+			g.MoveUp()
 
 		}
 
 		if inpututil.IsKeyJustPressed(ebiten.KeyDown) || inpututil.IsKeyJustPressed(ebiten.KeyS) {
-			timeNow := time.Now()
-			if timeNow.Sub(g.board.LastMove) > time.Millisecond*120 {
-				g.board.LastMove = timeNow
-				var moved bool = false
-				for i := range g.board.Grid {
-					if !moved {
-						if g.board.Grid[i].IsStoneHover && i != len(g.board.Grid)-1 && g.board.Grid[i].Col != g.boardSize-1 {
-							g.board.Grid[i].IsStoneHover = false
-							g.board.Grid[i].HoverStone = nil
-							g.board.Grid[i+1].IsStoneHover = true
-							if g.board.Turn == "black" {
-								g.board.Grid[i+1].HoverStone = g.board.StoneB
-							} else {
-								g.board.Grid[i+1].HoverStone = g.board.StoneW
-							}
-							moved = true
-
-						}
-					}
-
-				}
-			}
+			g.MoveDown()
 		}
 		if inpututil.IsKeyJustPressed(ebiten.KeyLeft) || inpututil.IsKeyJustPressed(ebiten.KeyA) {
-			timeNow := time.Now()
-			if timeNow.Sub(g.board.LastMove) > time.Millisecond*120 {
-				g.board.LastMove = timeNow
-				var moved bool = false
-				for i := range g.board.Grid {
-					if !moved {
-						if g.board.Grid[i].IsStoneHover && i != 0 && g.board.Grid[i].Row != 0 {
-							g.board.Grid[i].IsStoneHover = false
-							g.board.Grid[i].HoverStone = nil
-							g.board.Grid[i-g.boardSize].IsStoneHover = true
-							if g.board.Turn == "black" {
-								g.board.Grid[i-g.boardSize].HoverStone = g.board.StoneB
-							} else {
-								g.board.Grid[i-g.boardSize].HoverStone = g.board.StoneW
-							}
-							moved = true
-
-						}
-					}
-
-				}
-			}
+			g.MoveLeft()
 		}
 		if inpututil.IsKeyJustPressed(ebiten.KeyRight) || inpututil.IsKeyJustPressed(ebiten.KeyD) {
-			timeNow := time.Now()
-			if timeNow.Sub(g.board.LastMove) > time.Millisecond*120 {
-				g.board.LastMove = timeNow
-				var moved bool = false
-				for i := range g.board.Grid {
-					if !moved {
-						if g.board.Grid[i].IsStoneHover && i != len(g.board.Grid)-1 && g.board.Grid[i].Row != g.boardSize-1 {
-							g.board.Grid[i].IsStoneHover = false
-							g.board.Grid[i].HoverStone = nil
-							g.board.Grid[i+g.boardSize].IsStoneHover = true
-							if g.board.Turn == "black" {
-								g.board.Grid[i+g.boardSize].HoverStone = g.board.StoneB
-							} else {
-								g.board.Grid[i+g.boardSize].HoverStone = g.board.StoneW
-							}
-							moved = true
-						}
-					}
-
-				}
-			}
+			g.MoveRight()
 		}
 
 		if inpututil.IsKeyJustPressed(ebiten.KeySpace) || inpututil.IsKeyJustPressed(ebiten.KeyEnter) {
@@ -392,10 +312,6 @@ func (g *Game) Update() error {
 		}
 	}
 
-	if g.TouchInput.ShowTouchInput == true {
-		g.TouchInput.ProcessTouchInput(screenWidth, screenHeight)
-	}
-
 	if g.GameState == UIMainMenu {
 		//handle main menu ui
 	}
@@ -433,6 +349,104 @@ func (g *Game) Update() error {
 						return ebiten.Termination
 					}
 				}
+			}
+
+			if g.TouchInput.ShowTouchInput == true {
+				g.TouchInput.Taps = g.TouchInput.Taps[:0]
+				for id, t := range g.TouchInput.Touches {
+					if inpututil.IsTouchJustReleased(id) {
+						if g.TouchInput.Pinch != nil && (id == g.TouchInput.Pinch.Id1 || id == g.TouchInput.Pinch.Id2) {
+							g.TouchInput.Pinch = nil
+						}
+						if g.TouchInput.Pan != nil && id == g.TouchInput.Pan.Id {
+							g.TouchInput.Pan = nil
+						}
+
+						diff := input.Distance(t.OriginX, t.OriginY, t.CurrX, t.CurrY)
+						if !t.WasPinch && !t.IsPan && (t.Duration <= 30 || diff < 2) {
+							g.TouchInput.Taps = append(g.TouchInput.Taps, input.Tap{
+								X: t.CurrX,
+								Y: t.CurrY,
+							})
+						}
+						delete(g.TouchInput.Touches, id)
+					}
+				}
+				g.TouchInput.TouchIDs = inpututil.AppendJustPressedTouchIDs(g.TouchInput.TouchIDs[:0])
+				for _, id := range g.TouchInput.TouchIDs {
+					tx, ty := ebiten.TouchPosition(id)
+					input := input.CalculateTouchInput(screenWidth, screenHeight, tx, ty)
+					switch input {
+					case "UP":
+						if g.GameState == Gameplay {
+							g.MoveUp()
+						}
+						if g.GameState == UIPauseMenu {
+							g.UIUp()
+						}
+						if g.GameState == UIMainMenu {
+
+						}
+					case "DOWN":
+						if g.GameState == Gameplay {
+							g.MoveDown()
+						}
+						if g.GameState == UIPauseMenu {
+							g.UIDown()
+						}
+						if g.GameState == UIMainMenu {
+
+						}
+					case "LEFT":
+						if g.GameState == Gameplay {
+							g.MoveLeft()
+						}
+						if g.GameState == UIPauseMenu {
+							g.UIUp()
+						}
+						if g.GameState == UIMainMenu {
+
+						}
+					case "RIGHT":
+						if g.GameState == Gameplay {
+							g.MoveRight()
+						}
+						if g.GameState == UIPauseMenu {
+							g.UIDown()
+						}
+						if g.GameState == UIMainMenu {
+
+						}
+					case "MENU":
+						if g.GameState == Gameplay {
+							g.TogglePauseMenu()
+						}
+						if g.GameState == UIPauseMenu {
+							g.TogglePauseMenu()
+						}
+						if g.GameState == UIMainMenu {
+						}
+					case "ENTER":
+						if g.GameState == Gameplay {
+							g.PlaceStone()
+						}
+						if g.GameState == UIPauseMenu {
+							g.UIConfirm()
+						}
+						if g.GameState == UIMainMenu {
+						}
+					case "REMOVE":
+						if g.GameState == Gameplay {
+							g.RemoveStone()
+						}
+						if g.GameState == UIPauseMenu {
+						}
+						if g.GameState == UIMainMenu {
+						}
+					default:
+					}
+				}
+
 			}
 		}
 
