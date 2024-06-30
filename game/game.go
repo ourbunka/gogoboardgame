@@ -350,108 +350,107 @@ func (g *Game) Update() error {
 					}
 				}
 			}
-
-			if g.TouchInput.ShowTouchInput == true {
-				g.TouchInput.Taps = g.TouchInput.Taps[:0]
-				for id, t := range g.TouchInput.Touches {
-					if inpututil.IsTouchJustReleased(id) {
-						if g.TouchInput.Pinch != nil && (id == g.TouchInput.Pinch.Id1 || id == g.TouchInput.Pinch.Id2) {
-							g.TouchInput.Pinch = nil
-						}
-						if g.TouchInput.Pan != nil && id == g.TouchInput.Pan.Id {
-							g.TouchInput.Pan = nil
-						}
-
-						diff := input.Distance(t.OriginX, t.OriginY, t.CurrX, t.CurrY)
-						if !t.WasPinch && !t.IsPan && (t.Duration <= 30 || diff < 2) {
-							g.TouchInput.Taps = append(g.TouchInput.Taps, input.Tap{
-								X: t.CurrX,
-								Y: t.CurrY,
-							})
-						}
-						delete(g.TouchInput.Touches, id)
-					}
-				}
-				g.TouchInput.TouchIDs = inpututil.AppendJustPressedTouchIDs(g.TouchInput.TouchIDs[:0])
-				for _, id := range g.TouchInput.TouchIDs {
-					tx, ty := ebiten.TouchPosition(id)
-					input := input.CalculateTouchInput(screenWidth, screenHeight, tx, ty)
-					switch input {
-					case "UP":
-						if g.GameState == Gameplay {
-							g.MoveUp()
-						}
-						if g.GameState == UIPauseMenu {
-							g.UIUp()
-						}
-						if g.GameState == UIMainMenu {
-
-						}
-					case "DOWN":
-						if g.GameState == Gameplay {
-							g.MoveDown()
-						}
-						if g.GameState == UIPauseMenu {
-							g.UIDown()
-						}
-						if g.GameState == UIMainMenu {
-
-						}
-					case "LEFT":
-						if g.GameState == Gameplay {
-							g.MoveLeft()
-						}
-						if g.GameState == UIPauseMenu {
-							g.UIUp()
-						}
-						if g.GameState == UIMainMenu {
-
-						}
-					case "RIGHT":
-						if g.GameState == Gameplay {
-							g.MoveRight()
-						}
-						if g.GameState == UIPauseMenu {
-							g.UIDown()
-						}
-						if g.GameState == UIMainMenu {
-
-						}
-					case "MENU":
-						if g.GameState == Gameplay {
-							g.TogglePauseMenu()
-						}
-						if g.GameState == UIPauseMenu {
-							g.TogglePauseMenu()
-						}
-						if g.GameState == UIMainMenu {
-						}
-					case "ENTER":
-						if g.GameState == Gameplay {
-							g.PlaceStone()
-						}
-						if g.GameState == UIPauseMenu {
-							g.UIConfirm()
-						}
-						if g.GameState == UIMainMenu {
-						}
-					case "REMOVE":
-						if g.GameState == Gameplay {
-							g.RemoveStone()
-						}
-						if g.GameState == UIPauseMenu {
-						}
-						if g.GameState == UIMainMenu {
-						}
-					default:
-					}
-				}
-
-			}
 		}
 
 	}
 
+	if g.TouchInput.ShowTouchInput == true {
+		g.TouchInput.Taps = g.TouchInput.Taps[:0]
+		for id, t := range g.TouchInput.Touches {
+			if inpututil.IsTouchJustReleased(id) {
+				if g.TouchInput.Pinch != nil && (id == g.TouchInput.Pinch.Id1 || id == g.TouchInput.Pinch.Id2) {
+					g.TouchInput.Pinch = nil
+				}
+				if g.TouchInput.Pan != nil && id == g.TouchInput.Pan.Id {
+					g.TouchInput.Pan = nil
+				}
+
+				diff := input.Distance(t.OriginX, t.OriginY, t.CurrX, t.CurrY)
+				if !t.WasPinch && !t.IsPan && (t.Duration <= 30 || diff < 2) {
+					g.TouchInput.Taps = append(g.TouchInput.Taps, input.Tap{
+						X: t.CurrX,
+						Y: t.CurrY,
+					})
+				}
+				delete(g.TouchInput.Touches, id)
+			}
+		}
+		g.TouchInput.TouchIDs = inpututil.AppendJustPressedTouchIDs(g.TouchInput.TouchIDs[:0])
+		for _, id := range g.TouchInput.TouchIDs {
+			tx, ty := ebiten.TouchPosition(id)
+			input := input.CalculateTouchInput(screenWidth, screenHeight, tx, ty)
+			switch input {
+			case "UP":
+				if g.GameState == Gameplay {
+					g.MoveUp()
+				}
+				if g.GameState == UIPauseMenu {
+					g.UIUp()
+				}
+				if g.GameState == UIMainMenu {
+
+				}
+			case "DOWN":
+				if g.GameState == Gameplay {
+					g.MoveDown()
+				}
+				if g.GameState == UIPauseMenu {
+					g.UIDown()
+				}
+				if g.GameState == UIMainMenu {
+
+				}
+			case "LEFT":
+				if g.GameState == Gameplay {
+					g.MoveLeft()
+				}
+				if g.GameState == UIPauseMenu {
+					g.UIUp()
+				}
+				if g.GameState == UIMainMenu {
+
+				}
+			case "RIGHT":
+				if g.GameState == Gameplay {
+					g.MoveRight()
+				}
+				if g.GameState == UIPauseMenu {
+					g.UIDown()
+				}
+				if g.GameState == UIMainMenu {
+
+				}
+			case "MENU":
+				if g.GameState == Gameplay {
+					g.TogglePauseMenu()
+				}
+				if g.GameState == UIPauseMenu {
+					g.TogglePauseMenu()
+				}
+				if g.GameState == UIMainMenu {
+				}
+			case "ENTER":
+				if g.GameState == Gameplay {
+					g.PlaceStone()
+				}
+				if g.GameState == UIPauseMenu {
+					g.UIConfirm()
+				}
+				if g.GameState == UIMainMenu {
+				}
+			case "REMOVE":
+				if g.GameState == Gameplay {
+					g.RemoveStone()
+				}
+				if g.GameState == UIPauseMenu {
+				}
+				if g.GameState == UIMainMenu {
+				}
+			default:
+			}
+		}
+
+	}
 	if timeSampler >= 600 {
 		timeSampler = 0
 		end := time.Now()
