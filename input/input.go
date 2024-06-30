@@ -4,6 +4,7 @@ import (
 	"embed"
 	"gogoboardgame/utils"
 	"log"
+	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
 )
@@ -18,8 +19,29 @@ type OnScreenButton struct {
 	Img  *ebiten.Image
 }
 
-func LoadOnScreenButton(chanNewOnScreenButton chan OnScreenButton, Resources embed.FS,
-	UseEmbeded bool, Build string) {
+var Resources embed.FS
+var UseEmbeded bool
+
+func (ti TouchInput) ProcessTouchInput(screenWidth, screenHeight int) {
+	for i, t := range ebiten.TouchIDs() {
+		log.Println("PROCESSING TOUCH INDEX: ", i)
+		tx, ty := ebiten.TouchPosition(t)
+		switch {
+		case screenWidth <= tx:
+
+		// check menu min max
+		case float64(tx) >= (float64(screenWidth)*0.025)-50.0 && float64(tx) <= (float64(screenWidth)*0.025)+150.0 &&
+			float64(ty) >= (float64(screenHeight)*0.025)-50.0 && float64(ty) <= (float64(screenHeight)*0.025)+150.0:
+			//detected menu
+			log.Println("MENU")
+		default:
+		}
+
+	}
+}
+
+func LoadOnScreenButton(chanNewOnScreenButton chan OnScreenButton,
+	Build string) {
 	var path string
 	//movement button up
 	path = "./resources/button/button_movement.png"
@@ -31,7 +53,17 @@ func LoadOnScreenButton(chanNewOnScreenButton chan OnScreenButton, Resources emb
 		Name: "movement_up",
 		Img:  img,
 	}
-	chanNewOnScreenButton <- btn
+	var sent bool = false
+	time.Sleep(time.Millisecond * 16)
+	for !sent {
+		select {
+		case chanNewOnScreenButton <- btn:
+			sent = true
+		default:
+			time.Sleep(time.Millisecond * 16)
+			sent = false
+		}
+	}
 	//movement button down, rotate this when draw()
 	btn = OnScreenButton{
 		Name: "movement_down",
@@ -49,7 +81,17 @@ func LoadOnScreenButton(chanNewOnScreenButton chan OnScreenButton, Resources emb
 		Name: "movement_right",
 		Img:  img,
 	}
-	chanNewOnScreenButton <- btn
+	sent = false
+	time.Sleep(time.Millisecond * 16)
+	for !sent {
+		select {
+		case chanNewOnScreenButton <- btn:
+			sent = true
+		default:
+			time.Sleep(time.Millisecond * 16)
+			sent = false
+		}
+	}
 
 	//menu button
 	path = "./resources/button/button_menu.png"
@@ -61,7 +103,17 @@ func LoadOnScreenButton(chanNewOnScreenButton chan OnScreenButton, Resources emb
 		Name: "button_menu",
 		Img:  img,
 	}
-	chanNewOnScreenButton <- btn
+	sent = false
+	time.Sleep(time.Millisecond * 16)
+	for !sent {
+		select {
+		case chanNewOnScreenButton <- btn:
+			sent = true
+		default:
+			time.Sleep(time.Millisecond * 16)
+			sent = false
+		}
+	}
 
 	//movement button place
 	path = "./resources/button/button_add.png"
@@ -73,7 +125,17 @@ func LoadOnScreenButton(chanNewOnScreenButton chan OnScreenButton, Resources emb
 		Name: "button_place",
 		Img:  img,
 	}
-	chanNewOnScreenButton <- btn
+	sent = false
+	time.Sleep(time.Millisecond * 16)
+	for !sent {
+		select {
+		case chanNewOnScreenButton <- btn:
+			sent = true
+		default:
+			time.Sleep(time.Millisecond * 16)
+			sent = false
+		}
+	}
 
 	//movement button remove
 	path = "./resources/button/button_minus.png"
@@ -85,7 +147,17 @@ func LoadOnScreenButton(chanNewOnScreenButton chan OnScreenButton, Resources emb
 		Name: "button_remove",
 		Img:  img,
 	}
-	chanNewOnScreenButton <- btn
+	sent = false
+	time.Sleep(time.Millisecond * 16)
+	for !sent {
+		select {
+		case chanNewOnScreenButton <- btn:
+			sent = true
+		default:
+			time.Sleep(time.Millisecond * 16)
+			sent = false
+		}
+	}
 
 }
 

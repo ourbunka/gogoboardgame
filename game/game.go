@@ -81,7 +81,13 @@ func NewGame() *Game {
 	//go randomStoneLooper(newGame.boardSize * newGame.boardSize)
 	go spawnHoverStone(newGame.boardSize * newGame.boardSize)
 	go ui.PreloadUIAssets(chanNewUIAsset, screenWidth, screenHeight)
-	go input.LoadOnScreenButton(chanNewOnScreenButton, board.Resources, false, "DESKTOP")
+	if board.UseEmbeded == true {
+		newGame.TouchInput.ShowTouchInput = true
+		go input.LoadOnScreenButton(chanNewOnScreenButton, "ANDROID")
+	} else {
+		go input.LoadOnScreenButton(chanNewOnScreenButton, "DESKTOP")
+	}
+
 	return &newGame
 }
 
@@ -96,7 +102,7 @@ func (g *Game) Update() error {
 
 	if inpututil.IsKeyJustPressed(ebiten.KeyEscape) || inpututil.IsKeyJustPressed(ebiten.KeyTab) || inpututil.IsKeyJustPressed(ebiten.KeyM) {
 		timeNow := time.Now()
-		if timeNow.Sub(g.board.LastMove) > time.Millisecond*150 {
+		if timeNow.Sub(g.board.LastMove) > time.Millisecond*100 {
 			g.board.LastMove = timeNow
 			var moved bool = false
 			if g.GameState == UIMainMenu && !moved {
@@ -210,7 +216,7 @@ func (g *Game) Update() error {
 	if g.GameState == Gameplay {
 		if inpututil.IsKeyJustPressed(ebiten.KeyUp) || inpututil.IsKeyJustPressed(ebiten.KeyW) {
 			timeNow := time.Now()
-			if timeNow.Sub(g.board.LastMove) > time.Millisecond*160 {
+			if timeNow.Sub(g.board.LastMove) > time.Millisecond*120 {
 				g.board.LastMove = timeNow
 				for i := range g.board.Grid {
 					if g.board.Grid[i].IsStoneHover && i != 0 && g.board.Grid[i].Col != 0 {
@@ -232,7 +238,7 @@ func (g *Game) Update() error {
 
 		if inpututil.IsKeyJustPressed(ebiten.KeyDown) || inpututil.IsKeyJustPressed(ebiten.KeyS) {
 			timeNow := time.Now()
-			if timeNow.Sub(g.board.LastMove) > time.Millisecond*160 {
+			if timeNow.Sub(g.board.LastMove) > time.Millisecond*120 {
 				g.board.LastMove = timeNow
 				var moved bool = false
 				for i := range g.board.Grid {
@@ -256,7 +262,7 @@ func (g *Game) Update() error {
 		}
 		if inpututil.IsKeyJustPressed(ebiten.KeyLeft) || inpututil.IsKeyJustPressed(ebiten.KeyA) {
 			timeNow := time.Now()
-			if timeNow.Sub(g.board.LastMove) > time.Millisecond*160 {
+			if timeNow.Sub(g.board.LastMove) > time.Millisecond*120 {
 				g.board.LastMove = timeNow
 				var moved bool = false
 				for i := range g.board.Grid {
@@ -280,7 +286,7 @@ func (g *Game) Update() error {
 		}
 		if inpututil.IsKeyJustPressed(ebiten.KeyRight) || inpututil.IsKeyJustPressed(ebiten.KeyD) {
 			timeNow := time.Now()
-			if timeNow.Sub(g.board.LastMove) > time.Millisecond*160 {
+			if timeNow.Sub(g.board.LastMove) > time.Millisecond*120 {
 				g.board.LastMove = timeNow
 				var moved bool = false
 				for i := range g.board.Grid {
@@ -352,7 +358,7 @@ func (g *Game) Update() error {
 		}
 		if inpututil.IsKeyJustPressed(ebiten.KeyP) {
 			timeNow := time.Now()
-			if timeNow.Sub(g.board.LastMove) > time.Millisecond*250 {
+			if timeNow.Sub(g.board.LastMove) > time.Millisecond*200 {
 				g.board.LastMove = timeNow
 				var moved bool = false
 				for i := range g.board.Grid {
@@ -375,7 +381,7 @@ func (g *Game) Update() error {
 		}
 		if inpututil.IsKeyJustPressed(ebiten.KeyBackspace) {
 			timeNow := time.Now()
-			if timeNow.Sub(g.board.LastMove) > time.Millisecond*250 {
+			if timeNow.Sub(g.board.LastMove) > time.Millisecond*200 {
 				g.board.LastMove = timeNow
 				for i := range g.board.Grid {
 					if g.board.Grid[i].IsStoneHover {
@@ -386,13 +392,17 @@ func (g *Game) Update() error {
 		}
 	}
 
+	if g.TouchInput.ShowTouchInput == true {
+		g.TouchInput.ProcessTouchInput(screenWidth, screenHeight)
+	}
+
 	if g.GameState == UIMainMenu {
 		//handle main menu ui
 	}
 	if g.GameState == UIPauseMenu {
 		//handle pause menu ui
 		timeNow := time.Now()
-		if timeNow.Sub(g.board.LastMove) > time.Millisecond*30 {
+		if timeNow.Sub(g.board.LastMove) > time.Millisecond*10 {
 			g.board.LastMove = timeNow
 			if inpututil.IsKeyJustPressed(ebiten.KeyW) || inpututil.IsKeyJustPressed(ebiten.KeyUp) && len(g.UIs) > 1 {
 				for i, element := range g.UIs[1].Elements {
@@ -466,7 +476,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 			screen.DrawImage(grid.HoverStone, op)
 		}
 	}
-	if g.TouchInput.ShowTouchInput == true {
+	if g.TouchInput.ShowTouchInput == true && len(g.TouchInput.OnScreenButtons) >= 1 {
 		g.TouchInput.Draw(screen, screenHeight, screenWidth)
 	}
 
