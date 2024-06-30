@@ -108,11 +108,11 @@ func CalculateTouchInput(screenWidth, screenHeight int, tx, ty int) string {
 		float64(ty) >= float64(screenHeight)*0.825-25.0 && float64(ty) <= float64(screenHeight)*0.825+150:
 		log.Println("DOWN")
 		return "DOWN"
-	case float64(tx) >= (float64(screenWidth)*0.05)-25.0 && float64(tx) <= (float64(screenWidth)*0.05)+90.0 &&
+	case float64(tx) >= (float64(screenWidth)*0.025)-25.0 && float64(tx) <= (float64(screenWidth)*0.025)+90.0 &&
 		float64(ty) >= float64(screenHeight)*0.725-25.0 && float64(ty) <= float64(screenHeight)*0.725+150:
 		log.Println("LEFT")
 		return "LEFT"
-	case float64(tx) >= (float64(screenWidth)*0.15)-25.0 && float64(tx) <= (float64(screenWidth)*0.15)+90.0 &&
+	case float64(tx) >= (float64(screenWidth)*0.175)-25.0 && float64(tx) <= (float64(screenWidth)*0.175)+90.0 &&
 		float64(ty) >= float64(screenHeight)*0.725-25.0 && float64(ty) <= float64(screenHeight)*0.725+150:
 		log.Println("RIGHT")
 		return "RIGHT"
@@ -120,7 +120,7 @@ func CalculateTouchInput(screenWidth, screenHeight int, tx, ty int) string {
 		float64(ty) >= float64(screenHeight)*0.825-25.0 && float64(ty) <= float64(screenHeight)*0.825+150:
 		log.Println("ENTER")
 		return "ENTER"
-	case float64(tx) >= (float64(screenWidth)*0.1)+128.0-25.0 && float64(tx) <= (float64(screenWidth)*0.1)+128.0+150.0 &&
+	case float64(tx) >= (float64(screenWidth)*0.85)+128.0-25.0 && float64(tx) <= (float64(screenWidth)*0.85)+128.0+150.0 &&
 		float64(ty) >= float64(screenHeight)*0.825-25.0 && float64(ty) <= float64(screenHeight)*0.825+150:
 		log.Println("REMOVE")
 		return "REMOVE"
@@ -278,14 +278,14 @@ func (ti *TouchInput) Draw(screen *ebiten.Image, screenHeight, screenWidth int) 
 			theta := 270 * 3.141592 / 180
 			op.GeoM.Rotate(theta)
 			//offset +125 in y because of rotation
-			op.GeoM.Translate((float64(screenWidth) * 0.05), float64(screenHeight)*0.725+125.0)
+			op.GeoM.Translate((float64(screenWidth) * 0.025), float64(screenHeight)*0.725+125.0)
 			//op.GeoM.Translate(float64(dx+0*width-int(float64(screenWidth)*0.8)-128), float64(dy))
 		case 3:
 			//Right rotate it 90deg
 			theta := 90 * 3.141592 / 180
 			op.GeoM.Rotate(theta)
 			//offset +125 in x because of rotation
-			op.GeoM.Translate((float64(screenWidth)*0.15 + 125.0), float64(screenHeight)*0.725)
+			op.GeoM.Translate((float64(screenWidth)*0.175 + 125.0), float64(screenHeight)*0.725)
 			//op.GeoM.Translate(float64(dx+0*width-int(float64(screenWidth)*0.8)+256), float64(dy-128))
 		case 4:
 			//menu
@@ -295,7 +295,7 @@ func (ti *TouchInput) Draw(screen *ebiten.Image, screenHeight, screenWidth int) 
 			op.GeoM.Translate((float64(screenWidth) * 0.8), float64(screenHeight)*0.825)
 		case 6:
 			//remove stone
-			op.GeoM.Translate((float64(screenWidth)*0.8)+128, float64(screenHeight)*0.825)
+			op.GeoM.Translate((float64(screenWidth)*0.85)+128, float64(screenHeight)*0.825)
 
 		}
 
