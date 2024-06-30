@@ -133,10 +133,5 @@ func (ti *TouchInput) Draw(screen *ebiten.Image, screenHeight, screenWidth int) 
 
 		//op.GeoM.Translate(float64(screenWidth/8+i*100-width/2), float64(screenHeight-screenHeight/5-height/2))
 		screen.DrawImage(img, op)
-		switch {
-		case i == 0:
-
-		default:
-		}
 	}
 }
