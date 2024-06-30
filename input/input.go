@@ -30,8 +30,8 @@ func (ti TouchInput) ProcessTouchInput(screenWidth, screenHeight int) {
 		case screenWidth <= tx:
 
 		// check menu min max
-		case float64(tx) >= (float64(screenWidth)*0.025)-50.0 && float64(tx) <= (float64(screenWidth)*0.025)+150.0 &&
-			float64(ty) >= (float64(screenHeight)*0.025)-50.0 && float64(ty) <= (float64(screenHeight)*0.025)+150.0:
+		case float64(tx) >= (float64(screenWidth)*0.025)-25.0 && float64(tx) <= (float64(screenWidth)*0.025)+150.0 &&
+			float64(ty) >= (float64(screenHeight)*0.025)-25.0 && float64(ty) <= (float64(screenHeight)*0.025)+150.0:
 			//detected menu
 			log.Println("MENU")
 		default:
