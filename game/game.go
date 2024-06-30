@@ -2,6 +2,7 @@ package game
 
 import (
 	"gogoboardgame/board"
+	"gogoboardgame/input"
 	"gogoboardgame/ui"
 	"log"
 	"math/rand/v2"
@@ -22,6 +23,7 @@ var chanNewState = make(chan []int, 3)
 var chanNewHoverState = make(chan []int, 3)
 var chanNewLibertiesResult = make(chan []board.LibertiesUpdateResult, 2)
 var chanNewUIAsset = make(chan ui.UI, 3)
+var chanNewOnScreenButton = make(chan input.OnScreenButton, 10)
 var (
 	screenWidth  = 1920
 	screenHeight = 1080
@@ -44,6 +46,7 @@ type Game struct {
 	board      board.Board
 	LevelState string
 	UIs        []ui.UI
+	TouchInput input.TouchInput
 }
 
 func RunGame() {
@@ -73,10 +76,12 @@ func NewGame() *Game {
 	}
 
 	newGame.GameState = UIPauseMenu
+	newGame.TouchInput.ShowTouchInput = true
 	newGame.board.NewBoard(screenWidth, screenHeight, newGame.boardSize, rendererScale)
 	//go randomStoneLooper(newGame.boardSize * newGame.boardSize)
 	go spawnHoverStone(newGame.boardSize * newGame.boardSize)
 	go ui.PreloadUIAssets(chanNewUIAsset, screenWidth, screenHeight)
+	go input.LoadOnScreenButton(chanNewOnScreenButton, board.Resources, false, "DESKTOP")
 	return &newGame
 }
 
@@ -89,9 +94,9 @@ func (g *Game) Update() error {
 	start := time.Now()
 	timeSampler++
 
-	if inpututil.IsKeyJustPressed(ebiten.KeyEscape) {
+	if inpututil.IsKeyJustPressed(ebiten.KeyEscape) || inpututil.IsKeyJustPressed(ebiten.KeyTab) || inpututil.IsKeyJustPressed(ebiten.KeyM) {
 		timeNow := time.Now()
-		if timeNow.Sub(g.board.LastMove) > time.Millisecond*300 {
+		if timeNow.Sub(g.board.LastMove) > time.Millisecond*150 {
 			g.board.LastMove = timeNow
 			var moved bool = false
 			if g.GameState == UIMainMenu && !moved {
@@ -191,6 +196,13 @@ func (g *Game) Update() error {
 	case newUIAsset := <-chanNewUIAsset:
 		g.UIs = append(g.UIs, newUIAsset)
 		println("RECEIVED UI :", g.UIs[0].Name, newUIAsset.Name)
+
+	default:
+	}
+	select {
+	case newOnScreenButton := <-chanNewOnScreenButton:
+		g.TouchInput.OnScreenButtons = append(g.TouchInput.OnScreenButtons, newOnScreenButton)
+		println("RECEIVED OnScreenButton from channel")
 
 	default:
 	}
@@ -454,6 +466,10 @@ func (g *Game) Draw(screen *ebiten.Image) {
 			screen.DrawImage(grid.HoverStone, op)
 		}
 	}
+	if g.TouchInput.ShowTouchInput == true {
+		g.TouchInput.Draw(screen, screenHeight, screenWidth)
+	}
+
 	if g.GameState != Gameplay {
 		if g.GameState == UIMainMenu && g.UIs[0].BackgroundImage != nil {
 			op := &ebiten.DrawImageOptions{}

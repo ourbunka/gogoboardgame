@@ -13,7 +13,6 @@ var Resources embed.FS
 
 // run this to build for android
 // ebitenmobile bind -target android -javapkg com.ourbunka.goboardgame -o ./android/goboardgame.aar .
-// comment this when build for desktop
 func init() {
 	board.Resources = Resources
 	board.UseEmbeded = true
