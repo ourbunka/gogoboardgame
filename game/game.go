@@ -99,31 +99,6 @@ func (g *Game) Update() error {
 	//println(g.GameState)
 	start := time.Now()
 	timeSampler++
-	if inpututil.IsKeyJustPressed(ebiten.KeyEscape) || inpututil.IsKeyJustPressed(ebiten.KeyTab) || inpututil.IsKeyJustPressed(ebiten.KeyM) {
-		timeNow := time.Now()
-		if timeNow.Sub(g.board.LastMove) > time.Millisecond*100 {
-			g.board.LastMove = timeNow
-			var moved bool = false
-			if g.GameState == UIMainMenu && !moved {
-				board.ToDo()
-			}
-
-			//remove ui and return to gameplay while in ui gamestate
-			if g.GameState == UIPauseMenu && !moved {
-				g.GameState = Gameplay
-				println("ESC : ", g.GameState)
-				moved = true
-			}
-			//spawn pause menu while in gameplay gamestate
-			if g.GameState == Gameplay && !moved {
-				g.GameState = UIPauseMenu
-				println("ESC : ", g.GameState)
-				moved = true
-			}
-		}
-
-		//return ebiten.Termination
-	}
 
 	select {
 	case newState := <-chanNewState:
@@ -212,71 +187,27 @@ func (g *Game) Update() error {
 	default:
 	}
 
-	if g.GameState == Gameplay {
-		if inpututil.IsKeyJustPressed(ebiten.KeyUp) || inpututil.IsKeyJustPressed(ebiten.KeyW) {
+	switch g.GameState {
+	case Gameplay:
+		if ebiten.IsKeyPressed(ebiten.KeyUp) || ebiten.IsKeyPressed(ebiten.KeyW) {
 			g.MoveUp()
-
 		}
 
-		if inpututil.IsKeyJustPressed(ebiten.KeyDown) || inpututil.IsKeyJustPressed(ebiten.KeyS) {
+		if ebiten.IsKeyPressed(ebiten.KeyDown) || ebiten.IsKeyPressed(ebiten.KeyS) {
 			g.MoveDown()
 		}
-		if inpututil.IsKeyJustPressed(ebiten.KeyLeft) || inpututil.IsKeyJustPressed(ebiten.KeyA) {
+		if ebiten.IsKeyPressed(ebiten.KeyLeft) || ebiten.IsKeyPressed(ebiten.KeyA) {
 			g.MoveLeft()
 		}
-		if inpututil.IsKeyJustPressed(ebiten.KeyRight) || inpututil.IsKeyJustPressed(ebiten.KeyD) {
+		if ebiten.IsKeyPressed(ebiten.KeyRight) || ebiten.IsKeyPressed(ebiten.KeyD) {
 			g.MoveRight()
 		}
 
-		if inpututil.IsKeyJustPressed(ebiten.KeySpace) || inpututil.IsKeyJustPressed(ebiten.KeyEnter) {
-			//prototype todo check liberties,check if can place stone, check capture etc
-			timeNow := time.Now()
-			if timeNow.Sub(g.board.LastMove) > time.Millisecond*120 {
-				g.board.LastMove = timeNow
-				moved := false
-				for i := range g.board.Grid {
-					if g.board.Grid[i].IsStoneHover && g.board.Grid[i].Stone == nil {
-						currentTurn := g.board.Turn
-						var currentTurnState int
-						if currentTurn == "black" {
-							currentTurnState = 2
-						} else {
-							currentTurnState = 1
-						}
-						hasLiberties := g.board.CheckLiberties(currentTurnState, i, g.boardSize)
-						if hasLiberties {
-							if g.board.Turn == "black" && !moved {
-								g.board.Grid[i].Stone = g.board.StoneB
-								g.board.Grid[i].State = 2
-								g.board.LastPlacedIndex = i
-								moved = true
-								g.board.CanCurrentPlacedStoneCapture(chanNewLibertiesResult, g.board.Grid[i].Type, i, g.board.Grid[i].State, g.boardSize)
-								g.board.Turn = "white"
-								g.board.Grid[i].HoverStone = g.board.StoneW
-								g.board.Grid[i].HoverState = 3
-
-							}
-							if g.board.Turn == "white" && !moved {
-								g.board.Grid[i].Stone = g.board.StoneW
-								g.board.Grid[i].State = 1
-								g.board.LastPlacedIndex = i
-								moved = true
-								g.board.CanCurrentPlacedStoneCapture(chanNewLibertiesResult, g.board.Grid[i].Type, i, g.board.Grid[i].State, g.boardSize)
-								g.board.Turn = "black"
-								g.board.Grid[i].HoverStone = g.board.StoneB
-								g.board.Grid[i].HoverState = 4
-
-							}
-							go g.board.CalculateIndividualGridLiberties(g.boardSize, chanNewLibertiesResult)
-
-						}
-
-					}
-				}
-			}
+		if ebiten.IsKeyPressed(ebiten.KeySpace) || ebiten.IsKeyPressed(ebiten.KeyEnter) {
+			g.PlaceStone()
 
 		}
-		if inpututil.IsKeyJustPressed(ebiten.KeyP) {
+		if ebiten.IsKeyPressed(ebiten.KeyP) {
 			timeNow := time.Now()
 			if timeNow.Sub(g.board.LastMove) > time.Millisecond*200 {
 				g.board.LastMove = timeNow
@@ -299,59 +230,39 @@ func (g *Game) Update() error {
 				}
 			}
 		}
-		if inpututil.IsKeyJustPressed(ebiten.KeyBackspace) {
-			timeNow := time.Now()
-			if timeNow.Sub(g.board.LastMove) > time.Millisecond*200 {
-				g.board.LastMove = timeNow
-				for i := range g.board.Grid {
-					if g.board.Grid[i].IsStoneHover {
-						g.board.CaptureStone(i)
-					}
-				}
-			}
+		if ebiten.IsKeyPressed(ebiten.KeyBackspace) {
+			g.RemoveStone()
 		}
-	}
-
-	if g.GameState == UIMainMenu {
+		if ebiten.IsKeyPressed(ebiten.KeyEscape) || ebiten.IsKeyPressed(ebiten.KeyTab) || ebiten.IsKeyPressed(ebiten.KeyM) {
+			g.TogglePauseMenu()
+		}
+	case UIMainMenu:
 		//handle main menu ui
-	}
-	if g.GameState == UIPauseMenu {
+
+	case UIPauseMenu:
 		//handle pause menu ui
-		timeNow := time.Now()
-		if timeNow.Sub(g.board.LastMove) > time.Millisecond*10 {
-			g.board.LastMove = timeNow
-			if inpututil.IsKeyJustPressed(ebiten.KeyW) || inpututil.IsKeyJustPressed(ebiten.KeyUp) && len(g.UIs) > 1 {
-				for i, element := range g.UIs[1].Elements {
-					if element.CurrentState == ui.Selected && element.Name == "quit button" {
-						g.UIs[1].Elements[i].CurrentState = ui.Deselected
-						g.UIs[1].Elements[i].CurrentImage = g.UIs[1].Elements[i].DeselectedImage
-						g.UIs[1].Elements[i-1].CurrentState = ui.Selected
-						g.UIs[1].Elements[i-1].CurrentImage = g.UIs[1].Elements[i-1].SelectedImage
-					}
-				}
-			}
-			if inpututil.IsKeyJustPressed(ebiten.KeyS) || inpututil.IsKeyJustPressed(ebiten.KeyDown) && len(g.UIs) > 1 {
-				for i, element := range g.UIs[1].Elements {
-					if element.CurrentState == ui.Selected && element.Name == "resume button" {
-						g.UIs[1].Elements[i].CurrentState = ui.Deselected
-						g.UIs[1].Elements[i].CurrentImage = g.UIs[1].Elements[i].DeselectedImage
-						g.UIs[1].Elements[i+1].CurrentState = ui.Selected
-						g.UIs[1].Elements[i+1].CurrentImage = g.UIs[1].Elements[i+1].SelectedImage
-					}
-				}
-			}
-			if inpututil.IsKeyJustPressed(ebiten.KeySpace) || inpututil.IsKeyJustPressed(ebiten.KeyEnter) && len(g.UIs) > 1 {
-				for _, element := range g.UIs[1].Elements {
-					if element.CurrentState == ui.Selected && element.Name == "resume button" {
-						g.GameState = Gameplay
-					}
-					if element.CurrentState == ui.Selected && element.Name == "quit button" {
-						return ebiten.Termination
-					}
-				}
+		if ebiten.IsKeyPressed(ebiten.KeyW) && len(g.UIs) > 1 ||
+			ebiten.IsKeyPressed(ebiten.KeyUp) && len(g.UIs) > 1 {
+			g.UIUp()
+		}
+		if ebiten.IsKeyPressed(ebiten.KeyS) && len(g.UIs) > 1 ||
+			ebiten.IsKeyPressed(ebiten.KeyDown) && len(g.UIs) > 1 {
+			g.UIDown()
+		}
+		if ebiten.IsKeyPressed(ebiten.KeySpace) && len(g.UIs) > 1 ||
+			ebiten.IsKeyPressed(ebiten.KeyEnter) && len(g.UIs) > 1 {
+			err := g.UIConfirm()
+			if err != nil {
+				return err
 			}
 		}
+		if ebiten.IsKeyPressed(ebiten.KeyTab) ||
+			ebiten.IsKeyPressed(ebiten.KeyEscape) ||
+			ebiten.IsKeyPressed(ebiten.KeyM) {
+			g.TogglePauseMenu()
+		}
 
+	default:
 	}
 
 	if g.TouchInput.ShowTouchInput == true {
@@ -489,9 +400,6 @@ func (g *Game) Draw(screen *ebiten.Image) {
 			screen.DrawImage(grid.HoverStone, op)
 		}
 	}
-	if g.TouchInput.ShowTouchInput == true && len(g.TouchInput.OnScreenButtons) >= 1 {
-		g.TouchInput.Draw(screen, screenHeight, screenWidth)
-	}
 
 	if g.GameState != Gameplay {
 		if g.GameState == UIMainMenu && g.UIs[0].BackgroundImage != nil {
@@ -528,7 +436,9 @@ func (g *Game) Draw(screen *ebiten.Image) {
 				}
 			}
 		}
-
+	}
+	if g.TouchInput.ShowTouchInput == true && len(g.TouchInput.OnScreenButtons) >= 1 {
+		g.TouchInput.Draw(screen, screenHeight, screenWidth)
 	}
 }
 

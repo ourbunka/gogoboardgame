@@ -1,8 +1,8 @@
 package game
 
 import (
-	"gogoboardgame/board"
 	"gogoboardgame/ui"
+	"log"
 	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -163,35 +163,52 @@ func (g *Game) RemoveStone() {
 }
 
 func (g *Game) TogglePauseMenu() {
-	timeNow := time.Now()
-	if timeNow.Sub(g.board.LastMove) > time.Millisecond*100 {
-		g.board.LastMove = timeNow
-		var moved bool = false
-		if g.GameState == UIMainMenu && !moved {
-			board.ToDo()
-		}
 
-		//remove ui and return to gameplay while in ui gamestate
-		if g.GameState == UIPauseMenu && !moved {
-			g.GameState = Gameplay
-			println("ESC : ", g.GameState)
-			moved = true
-		}
-		//spawn pause menu while in gameplay gamestate
-		if g.GameState == Gameplay && !moved {
-			g.GameState = UIPauseMenu
-			println("ESC : ", g.GameState)
-			moved = true
-		}
+	//timeNow := time.Now()
+	if time.Now().Sub(g.board.LastMove) < time.Millisecond*100 {
+		return
 	}
+	log.Println("toggling menu")
+	g.board.LastMove = time.Now()
+	//var moved bool = false
+	switch g.GameState {
+	case UIMainMenu:
+		//board.ToDo()
+	case UIPauseMenu:
+		g.GameState = 3
+		println("ESC : ", g.GameState)
+		//moved = true
+	case Gameplay:
+		g.GameState = 2
+		println("ESC : ", g.GameState)
+		//moved = true
+	}
+	// if g.GameState == UIMainMenu && !moved {
+	// 	board.ToDo()
+	// 	return
+	// }
+
+	// //remove ui and return to gameplay while in ui gamestate
+	// if g.GameState == UIPauseMenu && !moved {
+
+	// }
+	// //spawn pause menu while in gameplay gamestate
+	// if g.GameState == Gameplay && !moved {
+
+	// }
+
 }
 
 func (g *Game) UIConfirm() error {
+	g.board.LastMove = time.Now()
+	moved := false
 	for _, element := range g.UIs[1].Elements {
-		if element.CurrentState == ui.Selected && element.Name == "resume button" {
+		if element.CurrentState == ui.Selected && element.Name == "resume button" && !moved {
 			g.GameState = Gameplay
+			moved = true
 		}
-		if element.CurrentState == ui.Selected && element.Name == "quit button" {
+		if element.CurrentState == ui.Selected && element.Name == "quit button" && !moved {
+			moved = true
 			return ebiten.Termination
 		}
 	}
@@ -199,6 +216,7 @@ func (g *Game) UIConfirm() error {
 }
 
 func (g *Game) UIUp() {
+	g.board.LastMove = time.Now()
 	for i, element := range g.UIs[1].Elements {
 		if element.CurrentState == ui.Selected && element.Name == "quit button" {
 			g.UIs[1].Elements[i].CurrentState = ui.Deselected
@@ -211,6 +229,7 @@ func (g *Game) UIUp() {
 
 func (g *Game) UIDown() {
 	for i, element := range g.UIs[1].Elements {
+		g.board.LastMove = time.Now()
 		if element.CurrentState == ui.Selected && element.Name == "resume button" {
 			g.UIs[1].Elements[i].CurrentState = ui.Deselected
 			g.UIs[1].Elements[i].CurrentImage = g.UIs[1].Elements[i].DeselectedImage
